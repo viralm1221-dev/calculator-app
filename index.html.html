@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Калькулятор">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#000000">
+    <title>Калькулятор iOS</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icon-192x192.png">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            -khtml-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+        
+        body {
+            background-color: #000;
+            height: 100vh;
+            overflow: hidden;
+            position: fixed;
+            width: 100%;
+        }
+        
+        .calculator {
+            width: 100%;
+            height: 100vh;
+            background-color: #000;
+            display: flex;
+            flex-direction: column;
+            padding-top: env(safe-area-inset-top);
+            padding-bottom: env(safe-area-inset-bottom);
+        }
+        
+        .display {
+            background-color: #000;
+            color: #fff;
+            padding: 80px 20px 20px;
+            text-align: right;
+            font-size: 80px;
+            font-weight: 300;
+            flex: 1;
+            display: flex;
+            justify-content: flex-end;
+            align-items: flex-end;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+        }
+        
+        .buttons {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            grid-gap: 12px;
+            padding: 12px;
+            background-color: #000;
+        }
+        
+        .btn {
+            height: 80px;
+            border-radius: 50%;
+            border: none;
+            font-size: 32px;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: opacity 0.2s;
+            -webkit-tap-highlight-color: transparent;
+            outline: none;
+        }
+        
+        .btn:active {
+            opacity: 0.7;
+        }
+        
+        .btn-gray {
+            background-color: #a5a5a5;
+            color: #000;
+        }
+        
+        .btn-dark {
+            background-color: #333;
+            color: #fff;
+        }
+        
+        .btn-orange {
+            background-color: #f1a33c;
+            color: #fff;
+        }
+        
+        .btn-zero {
+            grid-column: span 2;
+            border-radius: 40px;
+            justify-content: flex-start;
+            padding-left: 32px;
+        }
+        
+        .settings-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.9);
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+        }
+        
+        .settings-content {
+            background-color: #1c1c1e;
+            padding: 30px;
+            border-radius: 20px;
+            width: 300px;
+            color: #fff;
+        }
+        
+        .settings-content h2 {
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .settings-input {
+            width: 100%;
+            padding: 15px;
+            font-size: 18px;
+            background-color: #2c2c2e;
+            border: none;
+            border-radius: 10px;
+            color: #fff;
+            margin-bottom: 20px;
+        }
+        
+        .settings-btn {
+
+width: 100%;
+            padding: 15px;
+            font-size: 18px;
+            background-color: #007aff;
+            border: none;
+            border-radius: 10px;
+            color: #fff;
+            cursor: pointer;
+        }
+        
+        .install-prompt {
+            display: none;
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #1c1c1e;
+            color: white;
+            padding: 15px 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            z-index: 1000;
+            text-align: center;
+            max-width: 90%;
+        }
+        
+        .install-btn {
+            background-color: #007aff;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            margin-top: 10px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="calculator">
+        <div class="display" id="display">0</div>
+        <div class="buttons">
+            <button class="btn btn-gray" data-action="clear">AC</button>
+            <button class="btn btn-gray" data-action="toggleSign">±</button>
+            <button class="btn btn-gray" data-action="percentage">%</button>
+            <button class="btn btn-orange" data-action="divide">÷</button>
+            
+            <button class="btn btn-dark" data-number="7">7</button>
+            <button class="btn btn-dark" data-number="8">8</button>
+            <button class="btn btn-dark" data-number="9">9</button>
+            <button class="btn btn-orange" data-action="multiply">×</button>
+            
+            <button class="btn btn-dark" data-number="4">4</button>
+            <button class="btn btn-dark" data-number="5">5</button>
+            <button class="btn btn-dark" data-number="6">6</button>
+            <button class="btn btn-orange" data-action="subtract">−</button>
+            
+            <button class="btn btn-dark" data-number="1">1</button>
+            <button class="btn btn-dark" data-number="2">2</button>
+            <button class="btn btn-dark" data-number="3">3</button>
+            <button class="btn btn-orange" data-action="add">+</button>
+            
+            <button class="btn btn-dark btn-zero" data-number="0" id="zeroBtn">0</button>
+            <button class="btn btn-dark" data-action="decimal">.</button>
+            <button class="btn btn-orange" data-action="calculate">=</button>
+        </div>
+    </div>
+    
+    <div class="settings-modal" id="settingsModal">
+        <div class="settings-content">
+            <h2>Настройки</h2>
+            <input type="number" class="settings-input" id="baseValueInput" placeholder="Введите базовое число">
+            <button class="settings-btn" id="saveBaseValue">Сохранить</button>
+        </div>
+    </div>
+
+    <div class="install-prompt" id="installPrompt">
+        <p>Установите приложение для полноэкранного режима</p>
+        <button class="install-btn" id="installBtn">Установить</button>
+    </div>
+
+    <script>
+        // Регистрация Service Worker для PWA
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function() {
+                navigator.serviceWorker.register('/sw.js').then(function(registration) {
+                    console.log('ServiceWorker registration successful with scope: ', registration.scope);
+                }, function(err) {
+                    console.log('ServiceWorker registration failed: ', err);
+                });
+            });
+        }
+
+        // Обработка установки PWA
+        let deferredPrompt;
+        const installPrompt = document.getElementById('installPrompt');
+        const installBtn = document.getElementById('installBtn');
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            // Предотвращаем автоматическое отображение подсказки
+            e.preventDefault();
+            // Сохраняем событие для использования позже
+            deferredPrompt = e;
+
+// Показываем нашу кастомную подсказку
+            installPrompt.style.display = 'block';
+        });
+
+        installBtn.addEventListener('click', async () => {
+            if (!deferredPrompt) return;
+            
+            // Показываем стандартную подсказку установки
+            deferredPrompt.prompt();
+            
+            // Ждем ответа пользователя
+            const { outcome } = await deferredPrompt.userChoice;
+            
+            // Скрываем нашу подсказку
+            installPrompt.style.display = 'none';
+            
+            // Очищаем сохраненное событие
+            deferredPrompt = null;
+        });
+
+        // Состояние калькулятора
+        const state = {
+            currentValue: '0',
+            previousValue: null,
+            operation: null,
+            waitingForNewValue: false,
+            baseValue: 55555, // Значение по умолчанию
+            specialMode: false,
+            specialNumber: null,
+            specialIndex: 0
+        };
+
+        // Элементы DOM
+        const display = document.getElementById('display');
+        const settingsModal = document.getElementById('settingsModal');
+        const baseValueInput = document.getElementById('baseValueInput');
+        const saveBaseValueBtn = document.getElementById('saveBaseValue');
+        const zeroBtn = document.getElementById('zeroBtn');
+        
+        // Таймеры для длительного нажатия
+        let zeroPressTimer;
+        let addPressTimer;
+        
+        // Инициализация
+        function init() {
+            // Обработчики для цифровых кнопок
+            document.querySelectorAll('[data-number]').forEach(button => {
+                button.addEventListener('click', () => {
+                    if (state.specialMode) {
+                        handleSpecialModeInput();
+                    } else {
+                        inputNumber(button.dataset.number);
+                    }
+                });
+            });
+            
+            // Обработчики для действий
+            document.querySelectorAll('[data-action]').forEach(button => {
+                button.addEventListener('click', () => {
+                    const action = button.dataset.action;
+                    
+                    if (state.specialMode && action === 'calculate') {
+                        handleSpecialModeEquals();
+                    } else if (!state.specialMode) {
+                        handleAction(action);
+                    }
+                });
+            });
+            
+            // Долгое нажатие на 0
+            zeroBtn.addEventListener('mousedown', startZeroLongPress);
+            zeroBtn.addEventListener('touchstart', startZeroLongPress);
+            
+            zeroBtn.addEventListener('mouseup', cancelZeroLongPress);
+            zeroBtn.addEventListener('touchend', cancelZeroLongPress);
+            zeroBtn.addEventListener('mouseleave', cancelZeroLongPress);
+            
+            // Долгое нажатие на +
+            const addBtn = document.querySelector('[data-action="add"]');
+            addBtn.addEventListener('mousedown', startAddLongPress);
+            addBtn.addEventListener('touchstart', startAddLongPress);
+            
+            addBtn.addEventListener('mouseup', cancelAddLongPress);
+            addBtn.addEventListener('touchend', cancelAddLongPress);
+            addBtn.addEventListener('mouseleave', cancelAddLongPress);
+            
+            // Сохранение базового значения
+            saveBaseValueBtn.addEventListener('click', saveBaseValue);
+            
+            updateDisplay();
+        }
+        
+        // Обработка ввода цифр
+        function inputNumber(number) {
+            if (state.waitingForNewValue) {
+                state.currentValue = number;
+                state.waitingForNewValue = false;
+            } else {
+                state.currentValue = state.currentValue === '0' ? number : state.currentValue + number;
+            }
+            updateDisplay();
+        }
+        
+        // Обработка действий
+        function handleAction(action) {
+            switch (action) {
+
+case 'clear':
+                    resetCalculator();
+                    break;
+                case 'toggleSign':
+                    toggleSign();
+                    break;
+                case 'percentage':
+                    calculatePercentage();
+                    break;
+                case 'decimal':
+                    inputDecimal();
+                    break;
+                case 'add':
+                case 'subtract':
+                case 'multiply':
+                case 'divide':
+                    setOperation(action);
+                    break;
+                case 'calculate':
+                    calculate();
+                    break;
+            }
+        }
+        
+        // Сброс калькулятора
+        function resetCalculator() {
+            state.currentValue = '0';
+            state.previousValue = null;
+            state.operation = null;
+            state.waitingForNewValue = false;
+            state.specialMode = false;
+            state.specialNumber = null;
+            state.specialIndex = 0;
+            updateDisplay();
+        }
+        
+        // Изменение знака
+        function toggleSign() {
+            state.currentValue = (parseFloat(state.currentValue) * -1).toString();
+            updateDisplay();
+        }
+        
+        // Вычисление процента
+        function calculatePercentage() {
+            state.currentValue = (parseFloat(state.currentValue) / 100).toString();
+            updateDisplay();
+        }
+        
+        // Ввод десятичной точки
+        function inputDecimal() {
+            if (state.waitingForNewValue) {
+                state.currentValue = '0.';
+                state.waitingForNewValue = false;
+            } else if (state.currentValue.indexOf('.') === -1) {
+                state.currentValue += '.';
+            }
+            updateDisplay();
+        }
+        
+        // Установка операции
+        function setOperation(nextOperation) {
+            if (state.operation && !state.waitingForNewValue) {
+                calculate();
+            }
+            
+            state.operation = nextOperation;
+            state.previousValue = state.currentValue;
+            state.waitingForNewValue = true;
+        }
+        
+        // Вычисление
+        function calculate() {
+            if (!state.operation || state.waitingForNewValue) return;
+            
+            const prev = parseFloat(state.previousValue);
+            const current = parseFloat(state.currentValue);
+            let result;
+            
+            switch (state.operation) {
+                case 'add':
+                    result = prev + current;
+                    break;
+                case 'subtract':
+                    result = prev - current;
+                    break;
+                case 'multiply':
+                    result = prev * current;
+                    break;
+                case 'divide':
+                    result = prev / current;
+                    break;
+                default:
+                    return;
+            }
+            
+            state.currentValue = result.toString();
+            state.operation = null;
+            state.previousValue = null;
+            state.waitingForNewValue = true;
+            
+            updateDisplay();
+        }
+        
+        // Обновление дисплея
+        function updateDisplay() {
+            display.textContent = state.currentValue;
+        }
+        
+        // Долгое нажатие на 0
+        function startZeroLongPress() {
+            zeroPressTimer = setTimeout(showSettings, 1000);
+        }
+        
+        function cancelZeroLongPress() {
+            clearTimeout(zeroPressTimer);
+        }
+        
+        // Долгое нажатие на +
+        function startAddLongPress() {
+            addPressTimer = setTimeout(activateSpecialMode, 1000);
+        }
+        
+        function cancelAddLongPress() {
+            clearTimeout(addPressTimer);
+        }
+        
+        // Показать настройки
+        function showSettings() {
+            baseValueInput.value = state.baseValue;
+            settingsModal.style.
+
+display = 'flex';
+        }
+        
+        // Сохранить базовое значение
+        function saveBaseValue() {
+            const value = parseFloat(baseValueInput.value);
+            if (!isNaN(value)) {
+                state.baseValue = value;
+                settingsModal.style.display = 'none';
+                resetCalculator();
+            }
+        }
+        
+        // Активировать специальный режим
+        function activateSpecialMode() {
+            // Извлекаем все числа из текущего выражения
+            const numbers = extractNumbersFromDisplay();
+            
+            // Суммируем их
+            const sum = numbers.reduce((total, num) => total + num, 0);
+            
+            // Вычисляем специальное число
+            state.specialNumber = state.baseValue - sum;
+            
+            // Активируем специальный режим
+            state.specialMode = true;
+            state.specialIndex = 0;
+            state.currentValue = '0';
+            
+            updateDisplay();
+        }
+        
+        // Извлечь числа из текущего выражения на дисплее
+        function extractNumbersFromDisplay() {
+            // Простая реализация - извлекаем числа из строки
+            const numbers = [];
+            let currentNumber = '';
+            
+            for (let i = 0; i < state.currentValue.length; i++) {
+                const char = state.currentValue[i];
+                
+                if (!isNaN(parseInt(char)) || char === '.') {
+                    currentNumber += char;
+                } else if (currentNumber !== '') {
+                    numbers.push(parseFloat(currentNumber));
+                    currentNumber = '';
+                }
+            }
+            
+            if (currentNumber !== '') {
+                numbers.push(parseFloat(currentNumber));
+            }
+            
+            return numbers;
+        }
+        
+        // Обработка ввода в специальном режиме
+        function handleSpecialModeInput() {
+            if (state.specialIndex < state.specialNumber.toString().length) {
+                const specialStr = state.specialNumber.toString();
+                state.currentValue = state.currentValue === '0' ? 
+                    specialStr[state.specialIndex] : 
+                    state.currentValue + specialStr[state.specialIndex];
+                state.specialIndex++;
+                updateDisplay();
+            }
+        }
+        
+        // Обработка нажатия равно в специальном режиме
+        function handleSpecialModeEquals() {
+            if (state.specialIndex === state.specialNumber.toString().length) {
+                state.currentValue = state.baseValue.toString();
+                state.specialMode = false;
+                updateDisplay();
+            }
+        }
+        
+        // Запуск приложения
+        init();
+    </script>
+</body>
+</html>
